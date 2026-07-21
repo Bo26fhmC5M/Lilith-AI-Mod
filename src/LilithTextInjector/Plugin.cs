@@ -347,6 +347,7 @@ internal static class DialogueManagerUpdatePatch
     private static bool _nativeDatabaseDumpCompleted;
     private static bool _localizedLineDatabasesDumped;
     private const int MaxRememberedTurns = 32;
+    private const bool UseKoreanInsteadOfEnglish = true;    
     private const bool UseIrodori = true;
     private const string IrodoriVoiceEndpoint = "http://127.0.0.1:9881/v1/audio/speech";
     private static DateTimeOffset _weatherFetchedAt = DateTimeOffset.MinValue;
@@ -3704,7 +3705,9 @@ internal static class DialogueManagerUpdatePatch
         try
         {
             var language = GameSetting.Language ?? string.Empty;
-            return language.StartsWith("ko", StringComparison.OrdinalIgnoreCase);
+            return language.StartsWith("ko", StringComparison.OrdinalIgnoreCase)
+                || (language.StartsWith("en", StringComparison.OrdinalIgnoreCase)
+                    && UseKoreanInsteadOfEnglish);
         }
         catch
         {
