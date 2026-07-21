@@ -10,6 +10,7 @@ internal static class Program
 
     private static async Task Main(string[] args)
     {
+        var useIrodori = args.Contains("--irodori", StringComparer.OrdinalIgnoreCase);
         var parentPid = 0;
         var index = Array.FindIndex(args, value => string.Equals(value, "--parent", StringComparison.OrdinalIgnoreCase));
         if (index >= 0 && index + 1 < args.Length)
@@ -24,39 +25,12 @@ internal static class Program
         var owned = new List<Process>();
         try
         {
-            var python = Path.Combine(root, "python", "Scripts", "python.exe");
-            var api = Path.Combine(root, "gpt-sovits", "api_v2.py");
-            if (!File.Exists(python) || !File.Exists(api) || !File.Exists(Path.Combine(root, ".ready")))
-            {
-                await LogAsync(log, "Voice runtime is not ready.");
-                return;
-            }
-            var device = File.Exists(Path.Combine(root, "device.txt"))
-                ? File.ReadAllText(Path.Combine(root, "device.txt")).Trim().ToLowerInvariant()
-                : HasNvidiaGpu() ? "cuda" : "cpu";
-            foreach (var service in new[] { (Port: 9880, Name: "zh"), (Port: 9881, Name: "ja") })
-            {
-                if (await PortOpenAsync(service.Port, 300)) continue;
-                var config = Path.Combine(root, "config", $"{service.Name}-{device}.yaml");
-                if (!File.Exists(config)) throw new FileNotFoundException("Voice configuration is missing.", config);
-                var process = Process.Start(new ProcessStartInfo
-                {
-                    FileName = python,
-                    Arguments = $"\"{api}\" -a 127.0.0.1 -p {service.Port} -c \"{config}\"",
-                    WorkingDirectory = Path.Combine(root, "gpt-sovits"),
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    WindowStyle = ProcessWindowStyle.Hidden,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                }) ?? throw new InvalidOperationException("Could not start the voice service.");
-                process.OutputDataReceived += async (_, e) => { if (e.Data != null) await LogAsync(log, $"[{service.Name}] {e.Data}"); };
-                process.ErrorDataReceived += async (_, e) => { if (e.Data != null) await LogAsync(log, $"[{service.Name}:err] {e.Data}"); };
-                process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
-                owned.Add(process);
-            }
-            await LogAsync(log, $"Voice host started ({device}); owned processes={owned.Count}.");
+            await StartGptSoVitsAsync(root, log, owned, 9880, "zh");
+            if (useIrodori)
+                await StartIrodoriAsync(root, log, owned, 9881);
+            else
+                await StartGptSoVitsAsync(root, log, owned, 9881, "ja");
+            await LogAsync(log, $"Voice host started; owned processes={owned.Count}.");
             while (parentPid > 0)
             {
                 try
@@ -81,6 +55,67 @@ internal static class Program
             }
             await LogAsync(log, "Voice host stopped.");
         }
+    }
+
+    private static async Task StartGptSoVitsAsync(string root, string log, List<Process> owned, int port, string name)
+    {
+        var python = Path.Combine(root, "python", "Scripts", "python.exe");
+        var api = Path.Combine(root, "gpt-sovits", "api_v2.py");
+        if (!File.Exists(python) || !File.Exists(api) || !File.Exists(Path.Combine(root, ".ready")))
+        {
+            await LogAsync(log, $"GPT-SoVITS runtime '{name}' is not ready.");
+            return;
+        }
+        var device = File.Exists(Path.Combine(root, "device.txt"))
+            ? File.ReadAllText(Path.Combine(root, "device.txt")).Trim().ToLowerInvariant()
+            : HasNvidiaGpu() ? "cuda" : "cpu";
+        if (await PortOpenAsync(port, 300)) throw new InvalidOperationException($"Could not start the GPT-SoVITS service '{name}'; port {port} is already in use.");
+        var config = Path.Combine(root, "config", $"{name}-{device}.yaml");
+        if (!File.Exists(config)) throw new FileNotFoundException("Voice configuration is missing.", config);
+        var process = Process.Start(new ProcessStartInfo
+        {
+            FileName = python,
+            Arguments = $"\"{api}\" -a 127.0.0.1 -p {port} -c \"{config}\"",
+            WorkingDirectory = Path.Combine(root, "gpt-sovits"),
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        }) ?? throw new InvalidOperationException($"Could not start the GPT-SoVITS service '{name}'.");
+        process.OutputDataReceived += async (_, e) => { if (e.Data != null) await LogAsync(log, $"[{name}] {e.Data}"); };
+        process.ErrorDataReceived += async (_, e) => { if (e.Data != null) await LogAsync(log, $"[{name}:err] {e.Data}"); };
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        owned.Add(process);
+    }
+
+    private static async Task StartIrodoriAsync(string root, string log, List<Process> owned, int port)
+    {
+        var serverRoot = Path.Combine(root, "Irodori-TTS-Server");
+        var python = Path.Combine(serverRoot, ".venv", "Scripts", "python.exe");
+        if (!File.Exists(python))
+        {
+            await LogAsync(log, "Irodori runtime is not ready.");
+            return;
+        }
+        if (await PortOpenAsync(port, 300)) throw new InvalidOperationException($"Could not start the Irodori service; port {port} is already in use.");
+        var process = Process.Start(new ProcessStartInfo
+        {
+            FileName = python,
+            Arguments = $"-m irodori_openai_tts --host 127.0.0.1 --port {port}",
+            WorkingDirectory = serverRoot,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        }) ?? throw new InvalidOperationException("Could not start the Irodori service.");
+        process.OutputDataReceived += async (_, e) => { if (e.Data != null) await LogAsync(log, $"[irodori] {e.Data}"); };
+        process.ErrorDataReceived += async (_, e) => { if (e.Data != null) await LogAsync(log, $"[irodori:err] {e.Data}"); };
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        owned.Add(process);
     }
 
     private static bool HasNvidiaGpu()
