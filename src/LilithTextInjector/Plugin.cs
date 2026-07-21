@@ -548,6 +548,7 @@ internal static class DialogueManagerUpdatePatch
         string simplified;
         string japanese;
         string english;
+        string korean;
         string emotion;
         switch (signal.EventName)
         {
@@ -556,6 +557,7 @@ internal static class DialogueManagerUpdatePatch
                 simplified = "这一步要你点头，我才能继续。";
                 japanese = "ここから先は、君の許可が必要みたい。";
                 english = "I need your approval before I can continue.";
+                korean = "이 다음부터는 네 허락이 필요한 것 같아.";
                 emotion = "emoji_daze_1";
                 break;
             case "Stop":
@@ -563,6 +565,7 @@ internal static class DialogueManagerUpdatePatch
                 simplified = "做好了。你来看看吧。";
                 japanese = "終わったよ。見てみて。";
                 english = "It is ready. Come take a look.";
+                korean = "다 됐어. 한 번 볼래?";
                 emotion = "emoji_smile_1";
                 break;
             default:
@@ -570,11 +573,12 @@ internal static class DialogueManagerUpdatePatch
                 simplified = "嗯，我看看……";
                 japanese = "うん、ちょっと見てみるね……";
                 english = "Mm, let me take a look…";
+                korean = "응, 잠깐 볼게……";
                 emotion = "emoji_calm_1";
                 break;
         }
 
-        var displayText = ApiKeyText(traditional, simplified, japanese, english);
+        var displayText = ApiKeyText(traditional, simplified, japanese, english, korean);
         var speechText = IsJapaneseVoiceMode() ? japanese : traditional;
         PlayAiEmotion(emotion);
         manager.ForceSay(displayText, string.Empty, 8f);
@@ -679,7 +683,7 @@ internal static class DialogueManagerUpdatePatch
             _pendingVoiceSubmitText = transcript;
             _pendingVoiceSubmitAt = Time.unscaledTime + 1.5f;
             __instance.ForceSay(
-                ApiKeyText($"我聽見了：「{transcript}」", $"我听见了：“{transcript}”", $"「{transcript}」と聞こえたよ。", $"I heard: “{transcript}”"),
+                ApiKeyText($"我聽見了：「{transcript}」", $"我听见了：“{transcript}”", $"「{transcript}」と聞こえたよ。", $"I heard: “{transcript}”", $"「{transcript}」라고 들렸어."),
                 string.Empty,
                 4f);
         }
@@ -749,7 +753,7 @@ internal static class DialogueManagerUpdatePatch
             return;
         if (_requestInFlight)
         {
-            manager.ForceSay(ApiKeyText("先等我說完。", "先等我说完。", "先に話し終えさせて……", "Let me finish speaking first."), string.Empty, 4f);
+            manager.ForceSay(ApiKeyText("先等我說完。", "先等我说完。", "先に話し終えさせて……", "Let me finish speaking first.", "먼저 내 이야기부터 끝내게 해줘……"), string.Empty, 4f);
             return;
         }
         UpdatePendingAiNoteEvents(submitted);
@@ -807,7 +811,7 @@ internal static class DialogueManagerUpdatePatch
         }
         if (string.IsNullOrWhiteSpace(GetActiveChatApiKey()))
         {
-            manager.ForceSay(ApiKeyText("還沒有設定目前模型的 API Key。", "还没有设置当前模型的 API Key。", "現在のモデルのAPIキーがまだ設定されていないよ。", "The current model does not have an API key yet."), string.Empty, 6f);
+            manager.ForceSay(ApiKeyText("還沒有設定目前模型的 API Key。", "还没有设置当前模型的 API Key。", "現在のモデルのAPIキーがまだ設定されていないよ。", "The current model does not have an API key yet.", "현재 모델의 API 키가 아직 설정되지 않았어."), string.Empty, 6f);
             return;
         }
         _requestInFlight = true;
@@ -850,7 +854,8 @@ internal static class DialogueManagerUpdatePatch
                 "要先在設定中打開「進階電腦操作」，我才能替你截圖。",
                 "要先在设置中打开“高级电脑操作”，我才能替你截图。",
                 "先に設定で「高度なPC操作」を有効にしてね。そうしたらスクリーンショットを撮れるよ。",
-                "Enable “Advanced PC controls” in Settings first, then I can take a screenshot for you.");
+                "Enable “Advanced PC controls” in Settings first, then I can take a screenshot for you.",
+                "먼저 설정에서 '고급 PC 조작'을 켜줘. 그러면 스크린샷을 찍어줄 수 있어.");
             return true;
         }
 
@@ -896,7 +901,8 @@ internal static class DialogueManagerUpdatePatch
                 $"截好了，存在「圖片\\Lilith Screenshots\\{fileName}」。",
                 $"截好了，保存在“图片\\Lilith Screenshots\\{fileName}”。",
                 $"撮れたよ。「ピクチャ\\Lilith Screenshots\\{fileName}」に保存した。",
-                $"Done. I saved it as Pictures\\Lilith Screenshots\\{fileName}.");
+                $"Done. I saved it as Pictures\\Lilith Screenshots\\{fileName}.",
+                $"다 찍었어. '사진\\Lilith Screenshots\\{fileName}'에 저장해 뒀어.");
             Plugin.PluginLog.LogInfo($"Saved an allowlisted desktop screenshot to {outputPath}.");
         }
         catch (Exception exception)
@@ -909,7 +915,8 @@ internal static class DialogueManagerUpdatePatch
                     "已改用 Windows 截圖快捷鍵，圖片會在系統的「螢幕擷取畫面」資料夾。",
                     "已改用 Windows 截图快捷键，图片会在系统的“屏幕截图”文件夹。",
                     "Windowsのスクリーンショット機能に切り替えたよ。画像はシステムのスクリーンショットフォルダーに保存される。",
-                    "I used the Windows screenshot shortcut instead; the image will be in the system Screenshots folder.");
+                    "I used the Windows screenshot shortcut instead; the image will be in the system Screenshots folder.",
+                    "대신 Windows 스크린샷 단축키를 사용했어. 이미지는 시스템의 '스크린샷' 폴더에 저장돼.");
             }
             catch (Exception fallbackException)
             {
@@ -917,7 +924,8 @@ internal static class DialogueManagerUpdatePatch
                     "這台電腦目前沒有可用的截圖方式。",
                     "这台电脑目前没有可用的截图方式。",
                     "このPCでは今、利用できるスクリーンショット方法が見つからない。",
-                    "No compatible screenshot method is currently available on this PC.");
+                    "No compatible screenshot method is currently available on this PC.",
+                    "지금 이 PC에서는 스크린샷을 찍을 방법이 안 보이네.");
                 Plugin.PluginLog.LogWarning($"Screenshot fallback also failed: {fallbackException.Message}");
             }
         }
@@ -956,7 +964,8 @@ internal static class DialogueManagerUpdatePatch
             "這類操作可能刪除資料、失去未儲存內容或暴露憑證，所以不在莉莉絲的電腦操作權限內。",
             "这类操作可能删除数据、丢失未保存内容或暴露凭证，所以不在莉莉丝的电脑操作权限内。",
             "データの削除、未保存内容の消失、認証情報の露出につながる操作だから、リリスのPC操作権限には含めていないよ。",
-            "That action could delete data, lose unsaved work, or expose credentials, so it is outside Lilith's computer-control permissions.");
+            "That action could delete data, lose unsaved work, or expose credentials, so it is outside Lilith's computer-control permissions.",
+            "데이터가 지워지거나 중요한 정보가 노출될 수 있는 행동이라, 리리스의 조작 권한에는 포함되어 있지 않아.");
         Plugin.PluginLog.LogInfo("Blocked a destructive, arbitrary-shell, or credential-related computer command.");
         return true;
     }
@@ -972,7 +981,8 @@ internal static class DialogueManagerUpdatePatch
             "我能替你截圖、開啟常用資料夾、切換或排列視窗、顯示桌面、開啟工作檢視、複製指定文字，以及用瀏覽器搜尋。也能查看電量、記憶體、系統磁碟和網路狀態；刪檔、關機、密碼與任意終端指令不在權限內。",
             "我能替你截图、打开常用文件夹、切换或排列窗口、显示桌面、打开任务视图、复制指定文字，以及用浏览器搜索。也能查看电量、内存、系统磁盘和网络状态；删除文件、关机、密码与任意终端命令不在权限内。",
             "スクリーンショット、よく使うフォルダー、ウィンドウの切替や整列、デスクトップ表示、タスクビュー、指定した文字のコピー、ブラウザ検索ができるよ。バッテリー、メモリ、システムドライブ、ネット接続も確認できるけれど、削除、シャットダウン、パスワード、任意のコマンド実行はできない。",
-            "I can take screenshots, open common folders, switch or arrange windows, show the desktop, open Task View, copy text you specify, and search in your browser. I can also report battery, memory, system-drive, and network status; deletion, shutdown, passwords, and arbitrary shell commands stay blocked.");
+            "I can take screenshots, open common folders, switch or arrange windows, show the desktop, open Task View, copy text you specify, and search in your browser. I can also report battery, memory, system-drive, and network status; deletion, shutdown, passwords, and arbitrary shell commands stay blocked.",
+            "스크린샷, 자주 쓰는 폴더 열기, 창 전환이나 정렬, 바탕화면 보기, 지정한 텍스트 복사, 브라우저 검색 정도는 할 수 있어. 배터리나 메모리, 시스템 드라이브, 네트워크 상태도 확인할 수 있지만…… 파일 삭제나 시스템 종료, 비밀번호 입력 같은 건 할 수 없어.");
         return true;
     }
 
@@ -983,7 +993,7 @@ internal static class DialogueManagerUpdatePatch
         {
             if (!GetSystemPowerStatus(out var power) || power.BatteryLifePercent == 255)
             {
-                reply = ApiKeyText("這台電腦沒有回報可用的電池資訊。", "这台电脑没有报告可用的电池信息。", "このPCからバッテリー情報を取得できなかったよ。", "This PC did not report usable battery information.");
+                reply = ApiKeyText("這台電腦沒有回報可用的電池資訊。", "这台电脑没有报告可用的电池信息。", "このPCからバッテリー情報を取得できなかったよ。", "This PC did not report usable battery information.", "이 PC에서는 배터리 정보를 가져올 수 없었어.");
             }
             else
             {
@@ -992,7 +1002,8 @@ internal static class DialogueManagerUpdatePatch
                     $"目前電量是 {power.BatteryLifePercent}%{(charging ? "，正在接電" : "")}。",
                     $"目前电量是 {power.BatteryLifePercent}%{(charging ? "，正在接电" : "")}。",
                     $"バッテリーは {power.BatteryLifePercent}%{(charging ? "、電源に接続中" : "")}だよ。",
-                    $"The battery is at {power.BatteryLifePercent}%{(charging ? " and connected to power" : "")}.");
+                    $"The battery is at {power.BatteryLifePercent}%{(charging ? " and connected to power" : "")}.",
+                    $"현재 배터리는 {power.BatteryLifePercent}%{(charging ? ", 전원에 연결되어 있어." : "야.")}");
             }
             return true;
         }
@@ -1001,7 +1012,7 @@ internal static class DialogueManagerUpdatePatch
         {
             var memory = new MemoryStatusEx { Length = (uint)Marshal.SizeOf<MemoryStatusEx>() };
             if (!GlobalMemoryStatusEx(ref memory))
-                reply = ApiKeyText("沒有讀到記憶體狀態。", "没有读取到内存状态。", "メモリの状態を取得できなかった。", "I could not read the memory status.");
+                reply = ApiKeyText("沒有讀到記憶體狀態。", "没有读取到内存状态。", "メモリの状態を取得できなかった。", "I could not read the memory status.", "메모리 상태를 확인할 수 없었어.");
             else
             {
                 var total = FormatGiB(memory.TotalPhysical);
@@ -1010,7 +1021,8 @@ internal static class DialogueManagerUpdatePatch
                     $"記憶體使用率約 {memory.MemoryLoad}%，可用 {available} GB，共 {total} GB。",
                     $"内存使用率约 {memory.MemoryLoad}%，可用 {available} GB，共 {total} GB。",
                     $"メモリ使用率は約 {memory.MemoryLoad}%、空きは {available} GB、合計 {total} GBだよ。",
-                    $"Memory usage is about {memory.MemoryLoad}%; {available} GB is available out of {total} GB.");
+                    $"Memory usage is about {memory.MemoryLoad}%; {available} GB is available out of {total} GB.",
+                    $"메모리 사용률은 약 {memory.MemoryLoad}%, 남은 용량은 {available} GB, 전체는 {total} GB야.");
             }
             return true;
         }
@@ -1025,12 +1037,13 @@ internal static class DialogueManagerUpdatePatch
                     $"系統磁碟還有 {FormatGiB((ulong)drive.AvailableFreeSpace)} GB 可用，共 {FormatGiB((ulong)drive.TotalSize)} GB。",
                     $"系统磁盘还有 {FormatGiB((ulong)drive.AvailableFreeSpace)} GB 可用，共 {FormatGiB((ulong)drive.TotalSize)} GB。",
                     $"システムドライブの空きは {FormatGiB((ulong)drive.AvailableFreeSpace)} GB、合計 {FormatGiB((ulong)drive.TotalSize)} GBだよ。",
-                    $"The system drive has {FormatGiB((ulong)drive.AvailableFreeSpace)} GB free out of {FormatGiB((ulong)drive.TotalSize)} GB.");
+                    $"The system drive has {FormatGiB((ulong)drive.AvailableFreeSpace)} GB free out of {FormatGiB((ulong)drive.TotalSize)} GB.",
+                    $"시스템 드라이브의 남은 공간은 {FormatGiB((ulong)drive.AvailableFreeSpace)} GB, 전체는 {FormatGiB((ulong)drive.TotalSize)} GB야.");
             }
             catch (Exception exception)
             {
                 Plugin.PluginLog.LogWarning($"Could not inspect the system drive: {exception.Message}");
-                reply = ApiKeyText("沒有讀到系統磁碟狀態。", "没有读取到系统磁盘状态。", "システムドライブの状態を取得できなかった。", "I could not read the system-drive status.");
+                reply = ApiKeyText("沒有讀到系統磁碟狀態。", "没有读取到系统磁盘状态。", "システムドライブの状態を取得できなかった。", "I could not read the system-drive status.", "시스템 드라이브 상태를 확인할 수 없었어.");
             }
             return true;
         }
@@ -1039,8 +1052,8 @@ internal static class DialogueManagerUpdatePatch
         {
             var available = System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
             reply = available
-                ? ApiKeyText("本機目前有可用的網路連線。", "本机目前有可用的网络连接。", "今は利用できるネット接続があるよ。", "A network connection is currently available.")
-                : ApiKeyText("本機目前沒有偵測到可用的網路連線。", "本机目前没有检测到可用的网络连接。", "今は利用できるネット接続が見つからない。", "No available network connection is currently detected.");
+                ? ApiKeyText("本機目前有可用的網路連線。", "本机目前有可用的网络连接。", "今は利用できるネット接続があるよ。", "A network connection is currently available.", "지금은 쓸 수 있는 네트워크 연결이 있어.")
+                : ApiKeyText("本機目前沒有偵測到可用的網路連線。", "本机目前没有检测到可用的网络连接。", "今は利用できるネット接続が見つからない。", "No available network connection is currently detected.", "지금은 연결할 수 있는 네트워크가 안 보이네.");
             return true;
         }
         return false;
@@ -1062,48 +1075,48 @@ internal static class DialogueManagerUpdatePatch
         {
             path = Path.Combine(GetPicturesDirectory(), "Lilith Screenshots");
             Directory.CreateDirectory(path);
-            name = ApiKeyText("截圖資料夾", "截图文件夹", "スクリーンショットフォルダー", "Screenshots folder");
+            name = ApiKeyText("截圖資料夾", "截图文件夹", "スクリーンショットフォルダー", "Screenshots folder", "스크린샷 폴더");
         }
         else if (Regex.IsMatch(text, "(下載|下载|downloads?|ダウンロード)", RegexOptions.IgnoreCase))
         {
             path = GetDownloadsDirectory();
-            name = ApiKeyText("下載資料夾", "下载文件夹", "ダウンロードフォルダー", "Downloads folder");
+            name = ApiKeyText("下載資料夾", "下载文件夹", "ダウンロードフォルダー", "Downloads folder", "다운로드 폴더");
         }
         else if (Regex.IsMatch(text, "(桌面|desktop|デスクトップ)", RegexOptions.IgnoreCase))
         {
             path = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-            name = ApiKeyText("桌面資料夾", "桌面文件夹", "デスクトップフォルダー", "Desktop folder");
+            name = ApiKeyText("桌面資料夾", "桌面文件夹", "デスクトップフォルダー", "Desktop folder", "바탕화면 폴더");
         }
         else if (Regex.IsMatch(text, "(文件(?:資料夾|文件夹)|文檔|文档|documents?|ドキュメント)", RegexOptions.IgnoreCase))
         {
             path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            name = ApiKeyText("文件資料夾", "文档文件夹", "ドキュメントフォルダー", "Documents folder");
+            name = ApiKeyText("文件資料夾", "文档文件夹", "ドキュメントフォルダー", "Documents folder", "문서 폴더");
         }
         else if (Regex.IsMatch(text, "(圖片|图片|照片|pictures?|photos?|ピクチャ|写真).{0,5}(資料夾|文件夹|folder|フォルダ)?", RegexOptions.IgnoreCase))
         {
             path = GetPicturesDirectory();
-            name = ApiKeyText("圖片資料夾", "图片文件夹", "ピクチャフォルダー", "Pictures folder");
+            name = ApiKeyText("圖片資料夾", "图片文件夹", "ピクチャフォルダー", "Pictures folder", "사진 폴더");
         }
         else if (Regex.IsMatch(text, "(音樂|音乐|music|ミュージック).{0,5}(資料夾|文件夹|folder|フォルダ)?", RegexOptions.IgnoreCase))
         {
             path = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
-            name = ApiKeyText("音樂資料夾", "音乐文件夹", "ミュージックフォルダー", "Music folder");
+            name = ApiKeyText("音樂資料夾", "音乐文件夹", "ミュージックフォルダー", "Music folder", "음악 폴더");
         }
         else if (Regex.IsMatch(text, "(影片|視頻|视频|videos?|ビデオ).{0,5}(資料夾|文件夹|folder|フォルダ)?", RegexOptions.IgnoreCase))
         {
             path = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
-            name = ApiKeyText("影片資料夾", "视频文件夹", "ビデオフォルダー", "Videos folder");
+            name = ApiKeyText("影片資料夾", "视频文件夹", "ビデオフォルダー", "Videos folder", "동영상 폴더");
         }
         else if (Regex.IsMatch(text, "(MOD|模組|模组).{0,5}(資料夾|文件夹|folder|フォルダ)", RegexOptions.IgnoreCase))
         {
             path = MemoryDirectory;
             Directory.CreateDirectory(path);
-            name = ApiKeyText("MOD 資料夾", "MOD 文件夹", "MODフォルダー", "MOD folder");
+            name = ApiKeyText("MOD 資料夾", "MOD 文件夹", "MODフォルダー", "MOD folder", "MOD 폴더");
         }
         else if (Regex.IsMatch(text, "(資源回收筒|回收站|recycle bin|ごみ箱)", RegexOptions.IgnoreCase))
         {
             path = "shell:RecycleBinFolder";
-            name = ApiKeyText("資源回收筒", "回收站", "ごみ箱", "Recycle Bin");
+            name = ApiKeyText("資源回收筒", "回收站", "ごみ箱", "Recycle Bin", "휴지통");
         }
         if (path == null)
             return false;
@@ -1117,12 +1130,12 @@ internal static class DialogueManagerUpdatePatch
                 Arguments = path.StartsWith("shell:", StringComparison.OrdinalIgnoreCase) ? path : $"\"{path}\"",
                 UseShellExecute = true
             });
-            reply = ApiKeyText($"好，替你打開{name}。", $"好，替你打开{name}。", $"うん、{name}を開くね。", $"Okay, I'll open the {name}.");
+            reply = ApiKeyText($"好，替你打開{name}。", $"好，替你打开{name}。", $"うん、{name}を開くね。", $"Okay, I'll open the {name}.", $"응, {name} 열어줄게.");
             Plugin.PluginLog.LogInfo($"Opened allowlisted known folder '{name}'.");
         }
         catch (Exception exception)
         {
-            reply = ApiKeyText($"{name}沒有成功打開。", $"{name}没有成功打开。", $"{name}を開けなかった……", $"I couldn't open the {name}.");
+            reply = ApiKeyText($"{name}沒有成功打開。", $"{name}没有成功打开。", $"{name}を開けなかった……", $"I couldn't open the {name}.", $"{name} 여는 데 실패했어……");
             Plugin.PluginLog.LogWarning($"Could not open known folder '{name}': {exception.Message}");
         }
         return true;
@@ -1182,15 +1195,15 @@ internal static class DialogueManagerUpdatePatch
             {
                 case "desktop":
                     SendShortcut(0x5B, 0x44);
-                    reply = ApiKeyText("好，顯示桌面。", "好，显示桌面。", "うん、デスクトップを表示するね。", "Okay, showing the desktop.");
+                    reply = ApiKeyText("好，顯示桌面。", "好，显示桌面。", "うん、デスクトップを表示するね。", "Okay, showing the desktop.", "응, 바탕화면 보여줄게.");
                     break;
                 case "taskview":
                     SendShortcut(0x5B, 0x09);
-                    reply = ApiKeyText("工作檢視打開了。", "任务视图打开了。", "タスクビューを開いたよ。", "Task View is open.");
+                    reply = ApiKeyText("工作檢視打開了。", "任务视图打开了。", "タスクビューを開いたよ。", "Task View is open.", "작업 보기를 열었어.");
                     break;
                 case "switch":
                     SendShortcut(0x12, 0x09);
-                    reply = ApiKeyText("替你切到上一個視窗。", "替你切到上一个窗口。", "前のウィンドウに切り替えたよ。", "I switched to the previous window.");
+                    reply = ApiKeyText("替你切到上一個視窗。", "替你切到上一个窗口。", "前のウィンドウに切り替えたよ。", "I switched to the previous window.", "이전 창으로 바꿨어.");
                     break;
                 default:
                     var target = GetControllableWindow();
@@ -1199,17 +1212,17 @@ internal static class DialogueManagerUpdatePatch
                     if (action == "minimize")
                     {
                         ShowWindow(target, 6);
-                        reply = ApiKeyText("把剛才的視窗最小化了。", "把刚才的窗口最小化了。", "さっきのウィンドウを最小化したよ。", "I minimized the previous window.");
+                        reply = ApiKeyText("把剛才的視窗最小化了。", "把刚才的窗口最小化了。", "さっきのウィンドウを最小化したよ。", "I minimized the previous window.", "방금 전 창을 최소화했어.");
                     }
                     else if (action == "maximize")
                     {
                         ShowWindow(target, 3);
-                        reply = ApiKeyText("把剛才的視窗最大化了。", "把刚才的窗口最大化了。", "さっきのウィンドウを最大化したよ。", "I maximized the previous window.");
+                        reply = ApiKeyText("把剛才的視窗最大化了。", "把刚才的窗口最大化了。", "さっきのウィンドウを最大化したよ。", "I maximized the previous window.", "방금 전 창을 최대화했어.");
                     }
                     else if (action == "restore")
                     {
                         ShowWindow(target, 9);
-                        reply = ApiKeyText("視窗已經還原。", "窗口已经恢复。", "ウィンドウを元に戻したよ。", "I restored the window.");
+                        reply = ApiKeyText("視窗已經還原。", "窗口已经恢复。", "ウィンドウを元に戻したよ。", "I restored the window.", "창을 원래대로 되돌렸어.");
                     }
                     else
                     {
@@ -1218,8 +1231,8 @@ internal static class DialogueManagerUpdatePatch
                             throw new InvalidOperationException("The target window could not be activated.");
                         SendShortcut(0x5B, action == "left" ? (byte)0x25 : (byte)0x27);
                         reply = action == "left"
-                            ? ApiKeyText("把剛才的視窗排到左側了。", "把刚才的窗口排到左侧了。", "さっきのウィンドウを左側に並べたよ。", "I snapped the previous window to the left.")
-                            : ApiKeyText("把剛才的視窗排到右側了。", "把刚才的窗口排到右侧了。", "さっきのウィンドウを右側に並べたよ。", "I snapped the previous window to the right.");
+                            ? ApiKeyText("把剛才的視窗排到左側了。", "把刚才的窗口排到左侧了。", "さっきのウィンドウを左側に並べたよ。", "I snapped the previous window to the left.", "방금 전 창을 왼쪽에 붙였어.")
+                            : ApiKeyText("把剛才的視窗排到右側了。", "把刚才的窗口排到右侧了。", "さっきのウィンドウを右側に並べたよ。", "I snapped the previous window to the right.", "방금 전 창을 오른쪽에 붙였어.");
                     }
                     break;
             }
@@ -1227,7 +1240,7 @@ internal static class DialogueManagerUpdatePatch
         }
         catch (Exception exception)
         {
-            reply = ApiKeyText("這次沒有找到能操作的視窗。", "这次没有找到能操作的窗口。", "今回は操作できるウィンドウが見つからなかった。", "I couldn't find a window to control this time.");
+            reply = ApiKeyText("這次沒有找到能操作的視窗。", "这次没有找到能操作的窗口。", "今回は操作できるウィンドウが見つからなかった。", "I couldn't find a window to control this time.", "이번엔 조작할 수 있는 창을 못 찾았어.");
             Plugin.PluginLog.LogWarning($"Could not execute window action '{action}': {exception.Message}");
         }
         return true;
@@ -1259,14 +1272,14 @@ internal static class DialogueManagerUpdatePatch
             return false;
         if (ContainsSensitiveNoteData(content))
         {
-            reply = ApiKeyText("為了避免憑證外洩，我不會代為複製看起來像密碼、API Key 或驗證碼的內容。", "为了避免凭证泄露，我不会代为复制看起来像密码、API Key 或验证码的内容。", "認証情報の漏えいを避けるため、パスワード、APIキー、認証コードらしい内容はコピーしないよ。", "To avoid credential exposure, I won't copy text that looks like a password, API key, or verification code.");
+            reply = ApiKeyText("為了避免憑證外洩，我不會代為複製看起來像密碼、API Key 或驗證碼的內容。", "为了避免凭证泄露，我不会代为复制看起来像密码、API Key 或验证码的内容。", "認証情報の漏えいを避けるため、パスワード、APIキー、認証コードらしい内容はコピーしないよ。", "To avoid credential exposure, I won't copy text that looks like a password, API key, or verification code.", "중요한 정보가 새어나갈까 봐, 비밀번호나 API 키, 인증 코드 같은 건 복사하지 않을게.");
             return true;
         }
         if (!EnsureAdvancedComputerActions(out reply))
             return true;
 
         GUIUtility.systemCopyBuffer = content;
-        reply = ApiKeyText("已經替你複製到剪貼簿了。", "已经替你复制到剪贴板了。", "クリップボードにコピーしたよ。", "I copied it to the clipboard.");
+        reply = ApiKeyText("已經替你複製到剪貼簿了。", "已经替你复制到剪贴板了。", "クリップボードにコピーしたよ。", "I copied it to the clipboard.", "클립보드에 복사해 뒀어.");
         Plugin.PluginLog.LogInfo($"Copied player-specified text to the clipboard ({content.Length} chars; content hidden from log).");
         return true;
     }
@@ -1288,12 +1301,12 @@ internal static class DialogueManagerUpdatePatch
             {
                 var url = "https://www.google.com/search?q=" + Uri.EscapeDataString(query);
                 Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-                reply = ApiKeyText("好，已經在瀏覽器搜尋了。", "好，已经在浏览器搜索了。", "うん、ブラウザで検索したよ。", "Okay, I searched for it in your browser.");
+                reply = ApiKeyText("好，已經在瀏覽器搜尋了。", "好，已经在浏览器搜索了。", "うん、ブラウザで検索したよ。", "Okay, I searched for it in your browser.", "응, 브라우저에서 검색했어.");
                 Plugin.PluginLog.LogInfo($"Opened an explicit browser search ({query.Length} chars; query hidden from log).");
             }
             catch (Exception exception)
             {
-                reply = ApiKeyText("瀏覽器沒有成功打開。", "浏览器没有成功打开。", "ブラウザを開けなかった……", "I couldn't open the browser.");
+                reply = ApiKeyText("瀏覽器沒有成功打開。", "浏览器没有成功打开。", "ブラウザを開けなかった……", "I couldn't open the browser.", "브라우저를 열지 못했어……");
                 Plugin.PluginLog.LogWarning($"Could not open browser search: {exception.Message}");
             }
             return true;
@@ -1312,7 +1325,8 @@ internal static class DialogueManagerUpdatePatch
             "要先在設定中打開「進階電腦操作」，我才能執行這個動作。",
             "要先在设置中打开“高级电脑操作”，我才能执行这个动作。",
             "先に設定で「高度なPC操作」を有効にしてね。",
-            "Enable “Advanced PC controls” in Settings before I perform that action.");
+            "Enable “Advanced PC controls” in Settings before I perform that action.",
+            "먼저 설정에서 '고급 PC 조작'을 켜줘.");
         return false;
     }
 
@@ -1327,45 +1341,46 @@ internal static class DialogueManagerUpdatePatch
         string simplified;
         string japanese;
         string english;
+        string korean;
         if (Regex.IsMatch(text, "(下一首|下一曲|下一個|下一个|切下一首|次の曲|次へ|next song|next track)", RegexOptions.IgnoreCase))
         {
             key = 0xB0;
-            traditional = "好，換到下一首。"; simplified = "好，换到下一首。"; japanese = "うん、次の曲にするね。"; english = "Okay, next track.";
+            traditional = "好，換到下一首。"; simplified = "好，换到下一首。"; japanese = "うん、次の曲にするね。"; english = "Okay, next track."; korean = "응, 다음 곡으로 넘길게.";
         }
         else if (Regex.IsMatch(text, "(上一首|上一曲|上一個|上一个|切上一首|前の曲|前へ|previous song|previous track)", RegexOptions.IgnoreCase))
         {
             key = 0xB1;
-            traditional = "好，回到上一首。"; simplified = "好，回到上一首。"; japanese = "うん、前の曲に戻すね。"; english = "Okay, previous track.";
+            traditional = "好，回到上一首。"; simplified = "好，回到上一首。"; japanese = "うん、前の曲に戻すね。"; english = "Okay, previous track."; korean = "응, 이전 곡으로 돌릴게.";
         }
         else if (Regex.IsMatch(text, "(停止音樂|停止音乐|停止播放|音樂停掉|音乐停掉|再生停止|stop music|stop playback)", RegexOptions.IgnoreCase))
         {
             key = 0xB2;
-            traditional = "音樂停下來了。"; simplified = "音乐停下来了。"; japanese = "音楽を止めたよ。"; english = "I stopped the music.";
+            traditional = "音樂停下來了。"; simplified = "音乐停下来了。"; japanese = "音楽を止めたよ。"; english = "I stopped the music."; korean = "음악을 멈췄어.";
         }
         else if (Regex.IsMatch(text, "(暫停音樂|暂停音乐|暫停播放|暂停播放|音樂暫停|音乐暂停|先停一下|一時停止|pause music|pause playback)", RegexOptions.IgnoreCase))
         {
             key = 0xB3;
-            traditional = "嗯，先暫停一下。"; simplified = "嗯，先暂停一下。"; japanese = "うん、いったん止めるね。"; english = "Okay, paused for now.";
+            traditional = "嗯，先暫停一下。"; simplified = "嗯，先暂停一下。"; japanese = "うん、いったん止めるね。"; english = "Okay, paused for now."; korean = "응, 잠깐 멈춰둘게.";
         }
         else if (Regex.IsMatch(text, "(繼續播放|继续播放|繼續音樂|继续音乐|恢復播放|恢复播放|接著播|接着播|再生して|resume music|resume playback|play music)", RegexOptions.IgnoreCase))
         {
             key = 0xB3;
-            traditional = "好，繼續播放。"; simplified = "好，继续播放。"; japanese = "うん、続きを再生するね。"; english = "Okay, resuming playback.";
+            traditional = "好，繼續播放。"; simplified = "好，继续播放。"; japanese = "うん、続きを再生するね。"; english = "Okay, resuming playback."; korean = "응, 마저 재생할게.";
         }
         else if (Regex.IsMatch(text, "(靜音|静音|關掉聲音|关掉声音|ミュート|mute)", RegexOptions.IgnoreCase))
         {
             key = 0xAD;
-            traditional = "好，靜音了。"; simplified = "好，静音了。"; japanese = "ミュートにしたよ。"; english = "Muted.";
+            traditional = "好，靜音了。"; simplified = "好，静音了。"; japanese = "ミュートにしたよ。"; english = "Muted."; korean = "음소거했어.";
         }
         else if (Regex.IsMatch(text, "(音量大一點|音量大一点|提高音量|調大聲|调大声|音量上げ|volume up|louder)", RegexOptions.IgnoreCase))
         {
             key = 0xAF;
-            traditional = "音量調高一點了。"; simplified = "音量调高一点了。"; japanese = "少し音量を上げたよ。"; english = "I turned it up a little.";
+            traditional = "音量調高一點了。"; simplified = "音量调高一点了。"; japanese = "少し音量を上げたよ。"; english = "I turned it up a little."; korean = "소리를 조금 키웠어.";
         }
         else if (Regex.IsMatch(text, "(音量小一點|音量小一点|降低音量|調小聲|调小声|音量下げ|volume down|quieter)", RegexOptions.IgnoreCase))
         {
             key = 0xAE;
-            traditional = "音量調低一點了。"; simplified = "音量调低一点了。"; japanese = "少し音量を下げたよ。"; english = "I turned it down a little.";
+            traditional = "音量調低一點了。"; simplified = "音量调低一点了。"; japanese = "少し音量を下げたよ。"; english = "I turned it down a little."; korean = "소리를 조금 줄였어.";
         }
         else
         {
@@ -1375,12 +1390,12 @@ internal static class DialogueManagerUpdatePatch
         try
         {
             SendVirtualKey(key);
-            reply = ApiKeyText(traditional, simplified, japanese, english);
+            reply = ApiKeyText(traditional, simplified, japanese, english, korean);
             Plugin.PluginLog.LogInfo($"Sent allowlisted Windows media key 0x{key:X2}.");
         }
         catch (Exception exception)
         {
-            reply = ApiKeyText("媒體控制沒有成功。", "媒体控制没有成功。", "メディア操作がうまくいかなかった……", "The media control did not work.");
+            reply = ApiKeyText("媒體控制沒有成功。", "媒体控制没有成功。", "メディア操作がうまくいかなかった……", "The media control did not work.", "미디어 조작이 잘 안 됐어……");
             Plugin.PluginLog.LogWarning($"Could not send Windows media key: {exception.Message}");
         }
         return true;
@@ -1427,25 +1442,25 @@ internal static class DialogueManagerUpdatePatch
         {
             target = "notepad.exe";
             arguments = string.Empty;
-            appName = ApiKeyText("記事本", "记事本", "メモ帳", "Notepad");
+            appName = ApiKeyText("記事本", "记事本", "メモ帳", "Notepad", "메모장");
         }
         else if (Regex.IsMatch(text, "(計算機|计算器|電卓|calculator|calc)", RegexOptions.IgnoreCase))
         {
             target = "calc.exe";
             arguments = string.Empty;
-            appName = ApiKeyText("計算機", "计算器", "電卓", "Calculator");
+            appName = ApiKeyText("計算機", "计算器", "電卓", "Calculator", "계산기");
         }
         else if (Regex.IsMatch(text, "(檔案總管|文件资源管理器|資源管理器|エクスプローラー|file explorer|explorer)", RegexOptions.IgnoreCase))
         {
             target = "explorer.exe";
             arguments = string.Empty;
-            appName = ApiKeyText("檔案總管", "文件资源管理器", "エクスプローラー", "File Explorer");
+            appName = ApiKeyText("檔案總管", "文件资源管理器", "エクスプローラー", "File Explorer", "파일 탐색기");
         }
         else if (Regex.IsMatch(text, "(瀏覽器|浏览器|ブラウザ|browser|chrome|edge)", RegexOptions.IgnoreCase))
         {
             target = "https://www.google.com/";
             arguments = string.Empty;
-            appName = ApiKeyText("瀏覽器", "浏览器", "ブラウザ", "browser");
+            appName = ApiKeyText("瀏覽器", "浏览器", "ブラウザ", "browser", "브라우저");
         }
         else if (Regex.IsMatch(text, "(steam|蒸汽平台|スチーム)", RegexOptions.IgnoreCase))
         {
@@ -1461,14 +1476,14 @@ internal static class DialogueManagerUpdatePatch
             appName = requestedName;
             if (TryFocusRunningApplication(requestedName))
             {
-                reply = ApiKeyText($"好，已切換到{appName}。", $"好，已切换到{appName}。", $"うん、{appName}に切り替えたよ。", $"Sure, I focused {appName}.");
+                reply = ApiKeyText($"好，已切換到{appName}。", $"好，已切换到{appName}。", $"うん、{appName}に切り替えたよ。", $"Sure, I focused {appName}.", $"응, {appName} 창으로 바꿨어.");
                 Plugin.PluginLog.LogInfo($"Focused installed application requested through the local router: '{requestedName}'.");
                 return true;
             }
             var startApplication = ResolveWindowsStartApplication(requestedName);
             if (startApplication != null && TryLaunchWindowsStartApplication(startApplication))
             {
-                reply = ApiKeyText($"好，正在開啟{startApplication.Name}。", $"好，正在打开{startApplication.Name}。", $"うん、{startApplication.Name}を開くね。", $"Sure, I'm opening {startApplication.Name}.");
+                reply = ApiKeyText($"好，正在開啟{startApplication.Name}。", $"好，正在打开{startApplication.Name}。", $"うん、{startApplication.Name}を開くね。", $"Sure, I'm opening {startApplication.Name}.", $"응, {startApplication.Name} 열어줄게.");
                 return true;
             }
             var shortcut = ResolveWindowsShortcut(new[] { requestedName }) ?? ResolveFuzzyWindowsShortcut(requestedName);
@@ -1486,12 +1501,12 @@ internal static class DialogueManagerUpdatePatch
                 Arguments = arguments ?? string.Empty,
                 UseShellExecute = true
             });
-            reply = ApiKeyText($"好，幫你開啟{appName}。", $"好，帮你打开{appName}。", $"うん、{appName}を開くね。", $"Sure, I'll open {appName}.");
+            reply = ApiKeyText($"好，幫你開啟{appName}。", $"好，帮你打开{appName}。", $"うん、{appName}を開くね。", $"Sure, I'll open {appName}.", $"응, {appName} 열어줄게.");
             Plugin.PluginLog.LogInfo($"Launched allowlisted application target '{target}'.");
         }
         catch (Exception exception)
         {
-            reply = ApiKeyText($"{appName}沒有成功開啟。", $"{appName}没有成功打开。", $"{appName}を開けなかった……", $"I couldn't open {appName}.");
+            reply = ApiKeyText($"{appName}沒有成功開啟。", $"{appName}没有成功打开。", $"{appName}を開けなかった……", $"I couldn't open {appName}.", $"{appName} 여는 데 실패했어……");
             Plugin.PluginLog.LogWarning($"Could not launch allowlisted target '{target}': {exception.Message}");
         }
         return true;
@@ -2075,7 +2090,7 @@ internal static class DialogueManagerUpdatePatch
         {
             if (_microphoneRecording || _transcriptionInFlight || _requestInFlight)
             {
-                manager.ForceSay(ApiKeyText("先等我一下……", "先等我一下……", "少し待って……", "Wait for me a moment…"), string.Empty, 4f);
+                manager.ForceSay(ApiKeyText("先等我一下……", "先等我一下……", "少し待って……", "Wait for me a moment…", "조금만 기다려줘……"), string.Empty, 4f);
                 return;
             }
             var activeVoiceProvider = NormalizeAiProvider(Plugin.AiProvider.Value);
@@ -2085,7 +2100,7 @@ internal static class DialogueManagerUpdatePatch
             if (string.IsNullOrWhiteSpace(voiceApiKey))
             {
                 var providerName = string.Equals(activeVoiceProvider, "Qwen", StringComparison.Ordinal) ? "Qwen" : "Gemini";
-                manager.ForceSay(ApiKeyText($"還沒有設定 {providerName} API Key。", $"还没有设置 {providerName} API Key。", $"{providerName} APIキーがまだ設定されていないよ。", $"The {providerName} API key has not been set yet."), string.Empty, 6f);
+                manager.ForceSay(ApiKeyText($"還沒有設定 {providerName} API Key。", $"还没有设置 {providerName} API Key。", $"{providerName} APIキーがまだ設定されていないよ。", $"The {providerName} API key has not been set yet.", $"{providerName} API 키가 아직 설정되지 않았어."), string.Empty, 6f);
                 return;
             }
             try
@@ -2104,7 +2119,7 @@ internal static class DialogueManagerUpdatePatch
                 _wasapiCapture.StartRecording();
                 _microphoneRecording = true;
                 _microphoneStartedAt = Time.unscaledTime;
-                manager.ForceSay(ApiKeyText("正在聽……", "正在听……", "聞いているよ……", "Listening…"), string.Empty, maxSeconds + 2f);
+                manager.ForceSay(ApiKeyText("正在聽……", "正在听……", "聞いているよ……", "Listening…", "듣고 있어……"), string.Empty, maxSeconds + 2f);
                 Plugin.PluginLog.LogInfo($"F6 WASAPI recording started with Windows default input '{deviceName}' ({_wasapiCapture.WaveFormat}).");
             }
             catch (Exception exception)
@@ -2112,7 +2127,7 @@ internal static class DialogueManagerUpdatePatch
                 _microphoneRecording = false;
                 CleanupWasapiCapture();
                 Plugin.PluginLog.LogWarning($"Could not start microphone recording: {exception.Message}");
-                manager.ForceSay(ApiKeyText("沒有收到麥克風的聲音。", "没有收到麦克风的声音。", "マイクの音が届いていないみたい。", "I didn't receive any microphone audio."), string.Empty, 6f);
+                manager.ForceSay(ApiKeyText("沒有收到麥克風的聲音。", "没有收到麦克风的声音。", "マイクの音が届いていないみたい。", "I didn't receive any microphone audio.", "마이크 소리가 안 들리는 것 같아."), string.Empty, 6f);
             }
         }
 
@@ -2145,7 +2160,7 @@ internal static class DialogueManagerUpdatePatch
             _wasapiStream = null;
             if (wav.Length < 2048)
             {
-                PendingTranscriptionErrors.Enqueue(ApiKeyText("剛才沒有收到聲音，再試一次吧。", "刚才没有收到声音，再试一次吧。", "今の声は届かなかったみたい。もう一度試してみて。", "I didn't receive that audio. Please try again."));
+                PendingTranscriptionErrors.Enqueue(ApiKeyText("剛才沒有收到聲音，再試一次吧。", "刚才没有收到声音，再试一次吧。", "今の声は届かなかったみたい。もう一度試してみて。", "I didn't receive that audio. Please try again.", "방금 낸 소리는 안 들렸어. 다시 한 번 해볼래?"));
                 return;
             }
             var elapsed = Math.Max(0f, Time.unscaledTime - _microphoneStartedAt);
@@ -2157,7 +2172,8 @@ internal static class DialogueManagerUpdatePatch
                     "剛才沒有收到聲音，再試一次吧。",
                     "刚才没有收到声音，再试一次吧。",
                     "今の録音には声が入っていなかったみたい。もう一度試してみて。",
-                    "That recording did not contain audible speech. Please try again."));
+                    "That recording did not contain audible speech. Please try again.",
+                    "방금 녹음에는 목소리가 안 들어간 것 같아. 다시 한 번 해볼래?"));
                 Plugin.PluginLog.LogInfo($"Skipped silent voice transcription locally (elapsed={elapsed:F1}s, RMS={prepared.Rms:F6}, peak={prepared.Peak:F6}).");
                 CancelParaformerRealtimeSession();
                 return;
@@ -2178,7 +2194,7 @@ internal static class DialogueManagerUpdatePatch
         {
             CleanupWasapiCapture();
             Plugin.PluginLog.LogWarning($"Could not finish microphone recording: {exception.Message}");
-            PendingTranscriptionErrors.Enqueue(ApiKeyText("剛才沒有聽清楚，再試一次吧。", "刚才没有听清楚，再试一次吧。", "今の声はうまく聞き取れなかった。もう一度試してみて。", "I couldn't understand that recording. Please try again."));
+            PendingTranscriptionErrors.Enqueue(ApiKeyText("剛才沒有聽清楚，再試一次吧。", "刚才没有听清楚，再试一次吧。", "今の声はうまく聞き取れなかった。もう一度試してみて。", "I couldn't understand that recording. Please try again.", "방금 한 말은 잘 못 알아들었어. 다시 한 번 말해줄래?"));
         }
     }
 
@@ -2637,7 +2653,7 @@ internal static class DialogueManagerUpdatePatch
         catch (Exception exception)
         {
             Plugin.PluginLog.LogError($"Voice transcription failed: {exception}");
-            PendingTranscriptionErrors.Enqueue(ApiKeyText("剛才沒有聽清楚，再試一次吧。", "刚才没有听清楚，再试一次吧。", "今の声はうまく聞き取れなかった。もう一度試してみて。", "I couldn't understand that recording. Please try again."));
+            PendingTranscriptionErrors.Enqueue(ApiKeyText("剛才沒有聽清楚，再試一次吧。", "刚才没有听清楚，再试一次吧。", "今の声はうまく聞き取れなかった。もう一度試してみて。", "I couldn't understand that recording. Please try again.", "방금 한 말은 잘 못 알아들었어. 다시 한 번 말해줄래?"));
         }
         finally
         {
@@ -2703,7 +2719,7 @@ internal static class DialogueManagerUpdatePatch
             Plugin.PluginLog.LogError($"Qwen voice transcription failed: {exception}");
             PendingTranscriptionErrors.Enqueue(IsQwenAccountUnavailable(exception)
                 ? QwenAccountUnavailableReply()
-                : ApiKeyText("剛才沒有聽清楚，再試一次吧。", "刚才没有听清楚，再试一次吧。", "今の声はうまく聞き取れなかった。もう一度試してみて。", "I couldn't understand that recording. Please try again."));
+                : ApiKeyText("剛才沒有聽清楚，再試一次吧。", "刚才没有听清楚，再试一次吧。", "今の声はうまく聞き取れなかった。もう一度試してみて。", "I couldn't understand that recording. Please try again.", "방금 건 잘 못 들었어. 다시 말해줄래?"));
         }
         finally
         {
@@ -2877,7 +2893,7 @@ internal static class DialogueManagerUpdatePatch
         var label = FindFirstText(row);
         if (label == null)
             return;
-        label.text = ApiKeyText("進階電腦操作", "高级电脑操作", "高度なPC操作", "Advanced PC controls");
+        label.text = ApiKeyText("進階電腦操作", "高级电脑操作", "高度なPC操作", "Advanced PC controls", "고급 PC 조작");
     }
 
     private static void PlaceAdvancedActionsRow(Transform templateRow, Transform clonedRow)
@@ -3178,21 +3194,21 @@ internal static class DialogueManagerUpdatePatch
         {
             var label = FindFirstText(_textInputKeyRow.transform);
             if (label != null && label != _textInputKeyValue)
-                label.text = ApiKeyText("文字輸入按鍵", "文字输入按键", "文字入力キー", "Text input key");
+                label.text = ApiKeyText("文字輸入按鍵", "文字输入按键", "文字入力キー", "Text input key", "텍스트 입력 키");
         }
         if (_voiceInputKeyRow != null)
         {
             var label = FindFirstText(_voiceInputKeyRow.transform);
             if (label != null && label != _voiceInputKeyValue)
-                label.text = ApiKeyText("按住說話按鍵", "按住说话按键", "長押し会話キー", "Push-to-talk key");
+                label.text = ApiKeyText("按住說話按鍵", "按住说话按键", "長押し会話キー", "Push-to-talk key", "눌러서 말하기 키");
         }
         if (_textInputKeyValue != null)
             _textInputKeyValue.text = _keyBindingTarget == 1
-                ? ApiKeyText("按任意鍵…", "按任意键…", "キーを押す…", "Press a key…")
+                ? ApiKeyText("按任意鍵…", "按任意键…", "キーを押す…", "Press a key…", "아무 키나 누르기…")
                 : FormatKeyCode(Plugin.TextInputKey.Value);
         if (_voiceInputKeyValue != null)
             _voiceInputKeyValue.text = _keyBindingTarget == 2
-                ? ApiKeyText("按任意鍵…", "按任意键…", "キーを押す…", "Press a key…")
+                ? ApiKeyText("按任意鍵…", "按任意键…", "キーを押す…", "Press a key…", "아무 키나 누르기…")
                 : FormatKeyCode(Plugin.VoiceInputKey.Value);
         if (_textInputKeyButton != null && _textInputKeyButton.IsOn)
             _textInputKeyButton.SetValue(false, false);
@@ -3341,9 +3357,9 @@ internal static class DialogueManagerUpdatePatch
             var trayTable = LocalizationSettings.StringDatabase?.GetTable("TrayUI", LocalizationSettings.SelectedLocale);
             if (trayTable == null)
                 return;
-            trayTable.AddEntry("AddApiKey", ApiKeyText("加入 API KEY", "加入 API KEY", "APIキーを追加", "Add API Key"));
+            trayTable.AddEntry("AddApiKey", ApiKeyText("加入 API KEY", "加入 API KEY", "APIキーを追加", "Add API Key", "API 키 추가"));
             trayTable.AddEntry("Gemini", "Gemini");
-            trayTable.AddEntry("Qwen", ApiKeyText("千問", "千问", "Qwen（千問）", "Qwen"));
+            trayTable.AddEntry("Qwen", ApiKeyText("千問", "千问", "Qwen（千問）", "Qwen", "Qwen"));
             trayTable.AddEntry("OpenAI", "OpenAI");
             trayTable.AddEntry("DeepSeek", "DeepSeek");
             var providers = new[] { "Gemini", "Qwen", "OpenAI", "DeepSeek" };
@@ -3457,9 +3473,9 @@ internal static class DialogueManagerUpdatePatch
                     continue;
                 var current = label.text ?? string.Empty;
                 if (Regex.IsMatch(current, "兌換|兑换|redeem|exchange|コード", RegexOptions.IgnoreCase))
-                    label.text = ApiKeyText($"輸入 {_pendingApiKeyProvider} API 密鑰", $"输入 {_pendingApiKeyProvider} API 密钥", $"{_pendingApiKeyProvider} APIキーを入力", $"Enter {_pendingApiKeyProvider} API Key");
+                    label.text = ApiKeyText($"輸入 {_pendingApiKeyProvider} API 密鑰", $"输入 {_pendingApiKeyProvider} API 密钥", $"{_pendingApiKeyProvider} APIキーを入力", $"Enter {_pendingApiKeyProvider} API Key", $"{_pendingApiKeyProvider} API 키 입력");
                 else if (Regex.IsMatch(current, "好了|確認|确认|submit|confirm|redeem|交換", RegexOptions.IgnoreCase))
-                    label.text = ApiKeyText("儲存", "保存", "保存", "Save");
+                    label.text = ApiKeyText("儲存", "保存", "保存", "Save", "저장");
             }
         }
         catch (Exception exception)
@@ -3623,11 +3639,13 @@ internal static class DialogueManagerUpdatePatch
         internal string Text { get; }
     }
 
-    private static string ApiKeyText(string traditionalChinese, string simplifiedChinese, string japanese, string english)
+    private static string ApiKeyText(string traditionalChinese, string simplifiedChinese, string japanese, string english, string? korean = null)
     {
         try
         {
             var language = GameSetting.Language ?? string.Empty;
+            if (UsesKoreanInterface())
+                return korean ?? english;
             if (language.StartsWith("ja", StringComparison.OrdinalIgnoreCase))
                 return japanese;
             if (language.StartsWith("zh-CN", StringComparison.OrdinalIgnoreCase)
@@ -3642,14 +3660,16 @@ internal static class DialogueManagerUpdatePatch
         return english;
     }
 
-    internal static string LocalizedText(string traditionalChinese, string simplifiedChinese, string japanese, string english)
-        => ApiKeyText(traditionalChinese, simplifiedChinese, japanese, english);
+    internal static string LocalizedText(string traditionalChinese, string simplifiedChinese, string japanese, string english, string? korean = null)
+        => ApiKeyText(traditionalChinese, simplifiedChinese, japanese, english, korean);
 
     private static (string Name, string ExtraRule, string Example) GetAiInterfaceLanguage()
     {
         try
         {
             var language = GameSetting.Language ?? string.Empty;
+            if (UsesKoreanInterface())
+                return ("자연스러운 한국어", "중국어, 영어, 일본어 문장을 섞지 말 것.", "한국어 말풍선");
             if (language.StartsWith("ja", StringComparison.OrdinalIgnoreCase))
                 return ("自然な日本語", "中国語や英語の文章を混ぜないこと。", "日本語の吹き出し");
             if (language.StartsWith("zh-CN", StringComparison.OrdinalIgnoreCase)
@@ -3680,6 +3700,19 @@ internal static class DialogueManagerUpdatePatch
         catch
         {
             return true;
+        }
+    }
+
+    private static bool UsesKoreanInterface()
+    {
+        try
+        {
+            var language = GameSetting.Language ?? string.Empty;
+            return language.StartsWith("ko", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
         }
     }
 
@@ -3997,7 +4030,8 @@ internal static class DialogueManagerUpdatePatch
             "想對莉莉絲說什麼……",
             "想对莉莉丝说什么……",
             "リリスに何を話そう……",
-            "What would you like to say to Lilith…");
+            "What would you like to say to Lilith…",
+            "리리스에게 무슨 말을 할까……");
     }
 
     private static void TryCreateOneTestNote()
@@ -4012,7 +4046,8 @@ internal static class DialogueManagerUpdatePatch
                 "剛才聊到，要把那些原本藏在日常裡的小巧思延續下去。若你看見這封信，就代表莉莉絲真的能把我們的談話留在這裡了。——莉莉絲",
                 "刚才聊到，要把那些原本藏在日常里的小巧思延续下去。若你看见这封信，就代表莉莉丝真的能把我们的谈话留在这里了。——莉莉丝",
                 "さっき、日常に隠れている小さな仕掛けを、これからも大切にしようって話したね。この手紙が届いたなら、私たちの会話をここに残せたということ。——リリス",
-                "We talked about carrying those little details hidden in everyday life forward. If this letter reached you, Lilith can truly leave a trace of our conversation here. —Lilith");
+                "We talked about carrying those little details hidden in everyday life forward. If this letter reached you, Lilith can truly leave a trace of our conversation here. —Lilith",
+                "아까, 일상에 숨겨진 작은 장치들을 앞으로도 소중히 간직하자고 이야기했지. 이 편지가 도착했다면, 우리의 대화를 여기에 남길 수 있게 되었다는 뜻이야. ——리리스");
             var path = NoteImageSaver.SaveNote(text, false);
             NoteInbox.NotifySaved();
             Plugin.PluginLog.LogInfo($"Created one native-format test note: {path}");
@@ -4107,7 +4142,7 @@ internal static class DialogueManagerUpdatePatch
                 PendingReplies.Enqueue(QwenAccountUnavailableReply());
                 return;
             }
-            PendingReplies.Enqueue(ApiKeyText("連線好像出了點問題。晚點再試吧。", "连接好像出了点问题。稍后再试吧。", "接続に少し問題があるみたい。あとでまた試してみて。", "There seems to be a connection problem. Please try again later."));
+            PendingReplies.Enqueue(ApiKeyText("連線好像出了點問題。晚點再試吧。", "连接好像出了点问题。稍后再试吧。", "接続に少し問題があるみたい。あとでまた試してみて。", "There seems to be a connection problem. Please try again later.", "연결에 조금 문제가 있는 것 같아. 나중에 다시 시도해 볼래?"));
         }
     }
 
@@ -4181,7 +4216,7 @@ internal static class DialogueManagerUpdatePatch
         {
             if (session.ToolRounds >= 4)
             {
-                CompleteAiReply(ApiKeyText("電腦操作步驟太多了，我先停在這裡。", "电脑操作步骤太多了，我先停在这里。", "PC操作の手順が多すぎるから、ここで止めておくね。", "There were too many computer-control steps, so I stopped here."), session.UserText, session.PoseContext, session.JapaneseVoiceMode);
+                CompleteAiReply(ApiKeyText("電腦操作步驟太多了，我先停在這裡。", "电脑操作步骤太多了，我先停在这里。", "PC操作の手順が多すぎるから、ここで止めておくね。", "There were too many computer-control steps, so I stopped here.", "PC 조작 단계가 너무 많아서, 일단 여기서 멈출게."), session.UserText, session.PoseContext, session.JapaneseVoiceMode);
                 return;
             }
             session.ToolRounds++;
@@ -4256,7 +4291,7 @@ internal static class DialogueManagerUpdatePatch
         catch (Exception exception)
         {
             Plugin.PluginLog.LogError($"Gemini desktop tool execution failed: {exception}");
-            PendingReplies.Enqueue(ApiKeyText("剛才的電腦操作沒有成功。", "刚才的电脑操作没有成功。", "さっきのPC操作はうまくいかなかった……", "The computer action did not work."));
+            PendingReplies.Enqueue(ApiKeyText("剛才的電腦操作沒有成功。", "刚才的电脑操作没有成功。", "さっきのPC操作はうまくいかなかった……", "The computer action did not work.", "아까 한 PC 조작은 잘 안 됐어……"));
         }
     }
 
@@ -4289,7 +4324,7 @@ internal static class DialogueManagerUpdatePatch
         catch (Exception exception)
         {
             Plugin.PluginLog.LogError($"Gemini compatibility fallback failed: {exception}");
-            PendingReplies.Enqueue(ApiKeyText("這個模型目前不能使用電腦工具。", "这个模型目前不能使用电脑工具。", "このモデルでは今、PCツールを使えないみたい。", "This model cannot use the computer tools right now."));
+            PendingReplies.Enqueue(ApiKeyText("這個模型目前不能使用電腦工具。", "这个模型目前不能使用电脑工具。", "このモデルでは今、PCツールを使えないみたい。", "This model cannot use the computer tools right now.", "이 모델로는 지금 PC 도구를 쓸 수 없나 봐."));
         }
     }
 
@@ -4302,14 +4337,14 @@ internal static class DialogueManagerUpdatePatch
         catch (Exception exception)
         {
             Plugin.PluginLog.LogError($"Gemini tool continuation failed: {exception}");
-            PendingReplies.Enqueue(ApiKeyText("操作已經停下來了，但回覆沒有順利接上。", "操作已经停下来了，但回复没有顺利接上。", "操作は止めたけれど、返事をうまく続けられなかった。", "The actions stopped, but I couldn't complete the follow-up response."));
+            PendingReplies.Enqueue(ApiKeyText("操作已經停下來了，但回覆沒有順利接上。", "操作已经停下来了，但回复没有顺利接上。", "操作は止めたけれど、返事をうまく続けられなかった。", "The actions stopped, but I couldn't complete the follow-up response.", "조작은 멈췄는데, 대답을 잘 이어가지 못했어."));
         }
     }
 
     private static GeminiToolResult ExecuteGeminiComputerTool(GeminiFunctionCallData call)
     {
         if (!Plugin.AdvancedComputerActionsEnabled.Value)
-            return ToolResult(call, false, ApiKeyText("進階電腦操作目前是關閉的。", "高级电脑操作目前已关闭。", "高度なPC操作は今オフになっているよ。", "Advanced PC controls are currently disabled."));
+            return ToolResult(call, false, ApiKeyText("進階電腦操作目前是關閉的。", "高级电脑操作目前已关闭。", "高度なPC操作は今オフになっているよ。", "Advanced PC controls are currently disabled.", "고급 PC 조작이 지금 꺼져 있어."));
         try
         {
             switch (call.Name)
@@ -4339,19 +4374,19 @@ internal static class DialogueManagerUpdatePatch
                 case "cancel_timers":
                     var count = LocalTimers.Count;
                     LocalTimers.Clear();
-                    return ToolResult(call, true, ApiKeyText($"已取消 {count} 個計時器。", $"已取消 {count} 个计时器。", $"{count}件のタイマーを取り消したよ。", $"Cancelled {count} timer(s)."));
+                    return ToolResult(call, true, ApiKeyText($"已取消 {count} 個計時器。", $"已取消 {count} 个计时器。", $"{count}件のタイマーを取り消したよ。", $"Cancelled {count} timer(s).", $"{count}개의 타이머를 취소했어."));
                 case "lock_computer":
                     _pendingSystemAction = new PendingSystemAction { Action = "lock", ExecuteAfter = Time.unscaledTime + 8f };
-                    return ToolResult(call, true, ApiKeyText("已安排在回覆後鎖定電腦。", "已安排在回复后锁定电脑。", "返事のあとでPCをロックするね。", "The computer will lock after this reply."));
+                    return ToolResult(call, true, ApiKeyText("已安排在回覆後鎖定電腦。", "已安排在回复后锁定电脑。", "返事のあとでPCをロックするね。", "The computer will lock after this reply.", "대답이 끝나면 PC를 잠글게."));
                 case "sleep_computer":
                     _pendingSystemAction = new PendingSystemAction { Action = "sleep", ExecuteAfter = Time.unscaledTime + 8f };
-                    return ToolResult(call, true, ApiKeyText("已安排在回覆後讓電腦睡眠。", "已安排在回复后让电脑睡眠。", "返事のあとでPCをスリープさせるね。", "The computer will sleep after this reply."));
+                    return ToolResult(call, true, ApiKeyText("已安排在回覆後讓電腦睡眠。", "已安排在回复后让电脑睡眠。", "返事のあとでPCをスリープさせるね。", "The computer will sleep after this reply.", "대답이 끝나면 PC를 절전 모드로 바꿀게."));
                 case "cancel_system_action":
                     var hadAction = _pendingSystemAction != null;
                     _pendingSystemAction = null;
                     return ToolResult(call, true, hadAction
-                        ? ApiKeyText("已取消待執行的系統動作。", "已取消待执行的系统操作。", "待機中のシステム操作を取り消したよ。", "The pending system action was cancelled.")
-                        : ApiKeyText("目前沒有待執行的系統動作。", "目前没有待执行的系统操作。", "待機中のシステム操作はないよ。", "There is no pending system action."));
+                        ? ApiKeyText("已取消待執行的系統動作。", "已取消待执行的系统操作。", "待機中のシステム操作を取り消したよ。", "The pending system action was cancelled.", "대기 중이던 시스템 조작을 취소했어.")
+                        : ApiKeyText("目前沒有待執行的系統動作。", "目前没有待执行的系统操作。", "待機中のシステム操作はないよ。", "There is no pending system action.", "대기 중인 시스템 조작은 없어."));
                 default:
                     return ToolResult(call, false, "Unknown or unavailable desktop tool.");
             }
@@ -4368,7 +4403,7 @@ internal static class DialogueManagerUpdatePatch
         if (string.IsNullOrWhiteSpace(name) || Regex.IsMatch(name, "[\\\\/:*?\"<>|]"))
             return ToolResult(call, false, "A safe application name was not provided.");
         if (TryFocusRunningApplication(name))
-            return ToolResult(call, true, ApiKeyText($"已切換到{name}。", $"已切换到{name}。", $"{name}に切り替えたよ。", $"Focused {name}."));
+            return ToolResult(call, true, ApiKeyText($"已切換到{name}。", $"已切换到{name}。", $"{name}に切り替えたよ。", $"Focused {name}.", $"{name} 창으로 바꿨어."));
         var registered = FindConfiguredApplication(name) ?? FindOfficialApplication(name);
         if (registered != null)
         {
@@ -4378,11 +4413,11 @@ internal static class DialogueManagerUpdatePatch
                 UseShellExecute = true
             });
             Plugin.PluginLog.LogInfo($"Opened registered allowlisted application '{registered.Name}'.");
-            return ToolResult(call, true, ApiKeyText($"已開啟{registered.Name}。", $"已打开{registered.Name}。", $"{registered.Name}を開いたよ。", $"Opened {registered.Name}."));
+            return ToolResult(call, true, ApiKeyText($"已開啟{registered.Name}。", $"已打开{registered.Name}。", $"{registered.Name}を開いたよ。", $"Opened {registered.Name}.", $"{registered.Name} 열었어."));
         }
         var startApplication = ResolveWindowsStartApplication(name);
         if (startApplication != null && TryLaunchWindowsStartApplication(startApplication))
-            return ToolResult(call, true, ApiKeyText($"正在開啟{startApplication.Name}。", $"正在打开{startApplication.Name}。", $"{startApplication.Name}を開いているよ。", $"Opening {startApplication.Name}."));
+            return ToolResult(call, true, ApiKeyText($"正在開啟{startApplication.Name}。", $"正在打开{startApplication.Name}。", $"{startApplication.Name}を開いているよ。", $"Opening {startApplication.Name}.", $"{startApplication.Name} 여는 중이야."));
         var shortcut = ResolveWindowsShortcut(new[] { name });
         if (string.IsNullOrWhiteSpace(shortcut))
             shortcut = ResolveFuzzyWindowsShortcut(name);
@@ -4390,11 +4425,11 @@ internal static class DialogueManagerUpdatePatch
         {
             if (TryLaunchApplicationCommand("開啟 " + name, out var builtInReply))
                 return ToolResultFromReply(call, builtInReply);
-            return ToolResult(call, false, ApiKeyText($"沒有在這台電腦找到{name}。", $"没有在这台电脑找到{name}。", $"このPCでは{name}を見つけられなかった。", $"I couldn't find {name} on this PC."));
+            return ToolResult(call, false, ApiKeyText($"沒有在這台電腦找到{name}。", $"没有在这台电脑找到{name}。", $"このPCでは{name}を見つけられなかった。", $"I couldn't find {name} on this PC.", $"이 PC에서는 {name}라는 걸 찾을 수 없었어."));
         }
         Process.Start(new ProcessStartInfo(shortcut) { UseShellExecute = true });
         Plugin.PluginLog.LogInfo($"Opened an installed application from a Windows shortcut named '{Path.GetFileNameWithoutExtension(shortcut)}'.");
-        return ToolResult(call, true, ApiKeyText($"已開啟{name}。", $"已打开{name}。", $"{name}を開いたよ。", $"Opened {name}."));
+        return ToolResult(call, true, ApiKeyText($"已開啟{name}。", $"已打开{name}。", $"{name}を開いたよ。", $"Opened {name}.", $"{name} 열었어."));
     }
 
     private static GeminiToolResult ExecuteOpenFolderTool(GeminiFunctionCallData call, string folder)
@@ -4462,7 +4497,7 @@ internal static class DialogueManagerUpdatePatch
             return ToolResult(call, false, "Credential-like or personal text was blocked and was not copied.");
         GUIUtility.systemCopyBuffer = content;
         Plugin.PluginLog.LogInfo($"AI tool copied user-specified text locally ({content.Length} chars; content hidden)." );
-        return ToolResult(call, true, ApiKeyText("文字已複製到本機剪貼簿。", "文字已复制到本机剪贴板。", "文字をローカルのクリップボードにコピーしたよ。", "The text was copied to the local clipboard."));
+        return ToolResult(call, true, ApiKeyText("文字已複製到本機剪貼簿。", "文字已复制到本机剪贴板。", "文字をローカルのクリップボードにコピーしたよ。", "The text was copied to the local clipboard.", "텍스트를 클립보드에 복사해 뒀어."));
     }
 
     private static GeminiToolResult ExecuteBrowserSearchTool(GeminiFunctionCallData call, string query)
@@ -4473,7 +4508,7 @@ internal static class DialogueManagerUpdatePatch
             return ToolResult(call, false, "The search was blocked because it may contain personal or credential information.");
         Process.Start(new ProcessStartInfo("https://www.google.com/search?q=" + Uri.EscapeDataString(query)) { UseShellExecute = true });
         Plugin.PluginLog.LogInfo($"Opened a user-requested browser search ({query.Length} chars; query hidden)." );
-        return ToolResult(call, true, ApiKeyText("已在預設瀏覽器開啟搜尋。", "已在默认浏览器打开搜索。", "既定のブラウザで検索を開いたよ。", "The search was opened in the default browser."));
+        return ToolResult(call, true, ApiKeyText("已在預設瀏覽器開啟搜尋。", "已在默认浏览器打开搜索。", "既定のブラウザで検索を開いたよ。", "The search was opened in the default browser.", "기본 브라우저에서 검색을 열었어."));
     }
 
     private static GeminiToolResult ExecuteSystemStatusTool(GeminiFunctionCallData call, string category)
@@ -4517,10 +4552,10 @@ internal static class DialogueManagerUpdatePatch
         if (double.IsNaN(minutes) || double.IsInfinity(minutes) || minutes < 0.1 || minutes > 1440)
             return ToolResult(call, false, "Timer duration must be between 0.1 and 1440 minutes.");
         if (string.IsNullOrWhiteSpace(message))
-            message = ApiKeyText("時間到了。", "时间到了。", "時間だよ。", "Time is up.");
+            message = ApiKeyText("時間到了。", "时间到了。", "時間だよ。", "Time is up.", "시간 다 됐어.");
         LocalTimers.Add(new LocalTimer { DueAt = DateTimeOffset.Now.AddMinutes(minutes), Message = message.Trim() });
         Plugin.PluginLog.LogInfo($"Created local Lilith timer for {minutes:0.##} minute(s); message hidden.");
-        return ToolResult(call, true, ApiKeyText($"已設定 {minutes:0.##} 分鐘的計時器。", $"已设置 {minutes:0.##} 分钟的计时器。", $"{minutes:0.##}分のタイマーを設定したよ。", $"Set a timer for {minutes:0.##} minute(s)."));
+        return ToolResult(call, true, ApiKeyText($"已設定 {minutes:0.##} 分鐘的計時器。", $"已设置 {minutes:0.##} 分钟的计时器。", $"{minutes:0.##}分のタイマーを設定したよ。", $"Set a timer for {minutes:0.##} minute(s).", $"{minutes:0.##}분 타이머를 설정했어."));
     }
 
     private static GeminiToolResult ToolResultFromReply(GeminiFunctionCallData call, string reply)
@@ -4681,7 +4716,7 @@ internal static class DialogueManagerUpdatePatch
         {
             if (session.ToolRounds >= 4)
             {
-                CompleteAiReply(ApiKeyText("電腦操作步驟太多了，我先停在這裡。", "电脑操作步骤太多了，我先停在这里。", "PC操作の手順が多すぎるから、ここで止めておくね。", "There were too many computer-control steps, so I stopped here."), session.UserText, session.PoseContext, session.JapaneseVoiceMode);
+                CompleteAiReply(ApiKeyText("電腦操作步驟太多了，我先停在這裡。", "电脑操作步骤太多了，我先停在这里。", "PC操作の手順が多すぎるから、ここで止めておくね。", "There were too many computer-control steps, so I stopped here.", "PC 조작 단계가 너무 많아서, 여기서 멈출게."), session.UserText, session.PoseContext, session.JapaneseVoiceMode);
                 return;
             }
             session.ToolRounds++;
@@ -4758,7 +4793,7 @@ internal static class DialogueManagerUpdatePatch
         catch (Exception exception)
         {
             Plugin.PluginLog.LogError($"Qwen desktop tool execution failed: {exception}");
-            PendingReplies.Enqueue(ApiKeyText("剛才的電腦操作沒有成功。", "刚才的电脑操作没有成功。", "さっきのPC操作はうまくいかなかった……", "The computer action did not work."));
+            PendingReplies.Enqueue(ApiKeyText("剛才的電腦操作沒有成功。", "刚才的电脑操作没有成功。", "さっきのPC操作はうまくいかなかった……", "The computer action did not work.", "방금 그 PC 조작은 잘 안 됐네……"));
         }
     }
 
@@ -4771,7 +4806,7 @@ internal static class DialogueManagerUpdatePatch
         catch (Exception exception)
         {
             Plugin.PluginLog.LogError($"Qwen tool continuation failed: {exception}");
-            PendingReplies.Enqueue(ApiKeyText("操作已經停下來了，但回覆沒有順利接上。", "操作已经停下来了，但回复没有顺利接上。", "操作は止めたけれど、返事をうまく続けられなかった。", "The actions stopped, but I couldn't complete the follow-up response."));
+            PendingReplies.Enqueue(ApiKeyText("操作已經停下來了，但回覆沒有順利接上。", "操作已经停下来了，但回复没有顺利接上。", "操作は止めたけれど、返事をうまく続けられなかった。", "The actions stopped, but I couldn't complete the follow-up response.", "조작은 멈췄는데, 대답을 잘 이어가지 못했어."));
         }
     }
 
@@ -4789,7 +4824,8 @@ internal static class DialogueManagerUpdatePatch
             "千問帳戶目前被服務端拒絕了。請到阿里雲模型服務檢查免費額度或開通計費後再試。",
             "千问账户目前被服务端拒绝了。请到阿里云模型服务检查免费额度或开通计费后再试。",
             "千問アカウントがサーバー側で拒否されているよ。無料枠または課金状態を確認してから、もう一度試してね。",
-            "The Qwen account was rejected by the service. Check the free quota or billing status in Model Studio and try again.");
+            "The Qwen account was rejected by the service. Check the free quota or billing status in Model Studio and try again.",
+            "Qwen 계정이 서버에서 거부된 것 같아. 무료 제공량이나 결제 상태를 확인하고 다시 시도해 줄래?");
 
     private static async Task RequestOpenAiCompatibleAsync(string provider, string systemInstruction, string userText,
         PoseContext poseContext, bool japaneseVoiceMode)
@@ -6041,7 +6077,7 @@ internal static class DialogueManagerUpdatePatch
             LocalTimers.Remove(timer);
         var message = due.Count == 1
             ? due[0].Message
-            : ApiKeyText($"有 {due.Count} 個計時器到時間了。{due[0].Message}", $"有 {due.Count} 个计时器到时间了。{due[0].Message}", $"{due.Count}件のタイマーが時間になったよ。{due[0].Message}", $"{due.Count} timers are due. {due[0].Message}");
+            : ApiKeyText($"有 {due.Count} 個計時器到時間了。{due[0].Message}", $"有 {due.Count} 个计时器到时间了。{due[0].Message}", $"{due.Count}件のタイマーが時間になったよ。{due[0].Message}", $"{due.Count} timers are due. {due[0].Message}", $"{due.Count}개의 타이머가 끝났어. {due[0].Message}");
         manager.ForceSay(message, string.Empty, 12f);
         if (Plugin.VoiceEnabled.Value)
             _ = RequestSpeechAsync(message, poseStyle: CapturePoseContext().VoiceStyle);
@@ -6513,13 +6549,13 @@ internal static class TrayMenuLocalizationPatch
     {
         if (string.Equals(tableEntryKey, "AddApiKey", StringComparison.Ordinal))
         {
-            __result = DialogueManagerUpdatePatch.LocalizedText("加入 API KEY", "加入 API KEY", "APIキーを追加", "Add API Key");
+            __result = DialogueManagerUpdatePatch.LocalizedText("加入 API KEY", "加入 API KEY", "APIキーを追加", "Add API Key", "API 키 추가");
             return false;
         }
         if (tableEntryKey is "Gemini" or "Qwen" or "OpenAI" or "DeepSeek")
         {
             __result = tableEntryKey == "Qwen"
-                ? DialogueManagerUpdatePatch.LocalizedText("千問", "千问", "Qwen（千問）", "Qwen")
+                ? DialogueManagerUpdatePatch.LocalizedText("千問", "千问", "Qwen（千問）", "Qwen", "Qwen")
                 : tableEntryKey;
             return false;
         }
