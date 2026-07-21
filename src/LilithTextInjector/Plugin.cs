@@ -109,6 +109,7 @@ public sealed class Plugin : BasePlugin
     internal static ConfigEntry<bool> CodexBridgeVoiceEnabled = null!;
     internal static ConfigEntry<bool> UseIrodori = null!;
     internal static ConfigEntry<string> IrodoriVoiceEndpoint = null!;
+    internal static ConfigEntry<bool> UseKoreanInsteadOfEnglish = null!;
 
     public override void Load()
     {
@@ -249,6 +250,8 @@ public sealed class Plugin : BasePlugin
             "Use Irodori TTS endpoint for Japanese speech.");
         IrodoriVoiceEndpoint = Config.Bind("KoreanPatch", "IrodoriVoiceEndpoint", "http://127.0.0.1:9881/v1/audio/speech",
             "Irodori endpoint for Japanese speech.");
+        UseKoreanInsteadOfEnglish = Config.Bind("KoreanPatch", "UseKoreanInsteadOfEnglish", true,
+            "Use Korean interface text and AI responses when the game interface language is English.");
         MigrateKnownMojibakeDefaults();
         DialogueManagerUpdatePatch.LoadMemory();
         DialogueManagerUpdatePatch.LoadAiNoteState();
@@ -3708,7 +3711,9 @@ internal static class DialogueManagerUpdatePatch
         try
         {
             var language = GameSetting.Language ?? string.Empty;
-            return language.StartsWith("ko", StringComparison.OrdinalIgnoreCase);
+            return language.StartsWith("ko", StringComparison.OrdinalIgnoreCase)
+                || (language.StartsWith("en", StringComparison.OrdinalIgnoreCase)
+                    && Plugin.UseKoreanInsteadOfEnglish.Value);
         }
         catch
         {
