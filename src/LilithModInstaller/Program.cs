@@ -375,17 +375,20 @@ internal sealed class InstallerForm : Form
             using var response = await client.GetAsync(spec.Url, HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();
             var total = response.Content.Headers.ContentLength ?? spec.Bytes;
-            await using var source = await response.Content.ReadAsStreamAsync();
-            await using var destination = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None);
-            var buffer = new byte[1024 * 256];
-            long received = 0;
-            int read;
-            while ((read = await source.ReadAsync(buffer)) > 0)
+            await using (var source = await response.Content.ReadAsStreamAsync())
+            await using (var destination = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                await destination.WriteAsync(buffer.AsMemory(0, read));
-                received += read;
-                if (total > 0) _progress.Value = Math.Clamp((int)(received * 70 / total), 0, 70);
-                SetStatus(string.Format(L("正在下載 {0}：{1:0.0} MB", "正在下载 {0}：{1:0.0} MB", "{0} をダウンロード中：{1:0.0} MB", "Downloading {0}: {1:0.0} MB"), name, received / 1048576d));
+                var buffer = new byte[1024 * 256];
+                long received = 0;
+                int read;
+                while ((read = await source.ReadAsync(buffer)) > 0)
+                {
+                    await destination.WriteAsync(buffer.AsMemory(0, read));
+                    received += read;
+                    if (total > 0) _progress.Value = Math.Clamp((int)(received * 70 / total), 0, 70);
+                    SetStatus(string.Format(L("正在下載 {0}：{1:0.0} MB", "正在下载 {0}：{1:0.0} MB", "{0} をダウンロード中：{1:0.0} MB", "Downloading {0}: {1:0.0} MB"), name, received / 1048576d));
+                }
+                await destination.FlushAsync();
             }
             File.Move(temporary, local, true);
         }
