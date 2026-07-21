@@ -107,6 +107,8 @@ public sealed class Plugin : BasePlugin
     internal static ConfigEntry<bool> AdvancedComputerActionsEnabled = null!;
     internal static ConfigEntry<bool> CodexBridgeEnabled = null!;
     internal static ConfigEntry<bool> CodexBridgeVoiceEnabled = null!;
+    internal static ConfigEntry<bool> UseIrodori = null!;
+    internal static ConfigEntry<string> IrodoriVoiceEndpoint = null!;
 
     public override void Load()
     {
@@ -243,6 +245,10 @@ public sealed class Plugin : BasePlugin
             "Show local Codex lifecycle status through Lilith. No prompt text, API key, or Codex login data is read.");
         CodexBridgeVoiceEnabled = Config.Bind("CodexBridge", "VoiceEnabled", true,
             "Speak the important Codex lifecycle messages (started, approval required, and completed).");
+        UseIrodori = Config.Bind("IrodoriPatch", "UseIrodori", true,
+            "Use Irodori TTS endpoint for Japanese speech.");
+        IrodoriVoiceEndpoint = Config.Bind("IrodoriPatch", "IrodoriVoiceEndpoint", "http://127.0.0.1:9881/v1/audio/speech",
+            "Irodori endpoint for Japanese speech.");
         MigrateKnownMojibakeDefaults();
         DialogueManagerUpdatePatch.LoadMemory();
         DialogueManagerUpdatePatch.LoadAiNoteState();
@@ -1997,7 +2003,7 @@ internal static class DialogueManagerUpdatePatch
 
         try
         {
-            var endpoint = (useJapanese ? Plugin.JapaneseVoiceEndpoint.Value : Plugin.VoiceEndpoint.Value).Trim();
+            var endpoint = (useJapanese ? (Plugin.UseIrodori.Value ? Plugin.IrodoriVoiceEndpoint.Value : Plugin.JapaneseVoiceEndpoint.Value) : Plugin.VoiceEndpoint.Value).Trim();
             if (!endpoint.StartsWith("http://127.0.0.1:", StringComparison.OrdinalIgnoreCase))
                 return;
             _voiceHostLaunchAttempted = true;
@@ -2010,7 +2016,8 @@ internal static class DialogueManagerUpdatePatch
             var startInfo = new ProcessStartInfo
             {
                 FileName = hostPath,
-                Arguments = $"--voice-host --parent {Environment.ProcessId} --language {(useJapanese ? "ja" : "zh")}",
+                Arguments = $"--voice-host --parent {Environment.ProcessId} --language {(useJapanese ? "ja" : "zh")}"
+                    + (Plugin.UseIrodori.Value ? " --irodori" : string.Empty),
                 WorkingDirectory = Path.GetDirectoryName(hostPath) ?? Paths.GameRootPath,
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -5191,21 +5198,41 @@ internal static class DialogueManagerUpdatePatch
                 return;
             }
 
-            var payload = new
+            object payload;
+            string endpoint;
+            if (useJapanese && Plugin.UseIrodori.Value)
             {
-                text = speechText,
-                text_lang = useJapanese ? "ja" : "zh",
-                ref_audio_path = referencePath,
-                aux_ref_audio_paths = auxiliaryReferences,
-                prompt_lang = useJapanese ? "ja" : "zh",
-                prompt_text = promptText,
-                text_split_method = "cut0",
-                batch_size = 1,
-                media_type = "wav",
-                streaming_mode = false,
-                seed = 42
-            };
-            var endpoint = useJapanese ? Plugin.JapaneseVoiceEndpoint.Value.Trim() : Plugin.VoiceEndpoint.Value.Trim();
+                payload = new
+                {
+                    model = "irodori-tts",
+                    input = speechText,
+                    response_format = "wav",
+                    irodori = new
+                    {
+                        ref_wav = referencePath,
+                        seed = 42
+                    }
+                };
+                endpoint = Plugin.IrodoriVoiceEndpoint.Value.Trim();
+            }
+            else
+            {
+                payload = new
+                {
+                    text = speechText,
+                    text_lang = useJapanese ? "ja" : "zh",
+                    ref_audio_path = referencePath,
+                    aux_ref_audio_paths = auxiliaryReferences,
+                    prompt_lang = useJapanese ? "ja" : "zh",
+                    prompt_text = promptText,
+                    text_split_method = "cut0",
+                    batch_size = 1,
+                    media_type = "wav",
+                    streaming_mode = false,
+                    seed = 42
+                };
+                endpoint = useJapanese ? Plugin.JapaneseVoiceEndpoint.Value.Trim() : Plugin.VoiceEndpoint.Value.Trim();
+            }
             var payloadJson = JsonSerializer.Serialize(payload);
             var localEndpoint = IsLocalVoiceEndpoint(endpoint);
             var maximumAttempts = localEndpoint && Plugin.VoiceAutoStartLocalService.Value ? 7 : 1;
