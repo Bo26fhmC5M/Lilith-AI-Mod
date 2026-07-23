@@ -4088,7 +4088,10 @@ internal static class DialogueManagerUpdatePatch
             var weatherContext = await BuildWeatherContextAsync().ConfigureAwait(false);
             var useGoogleSearch = ShouldUseGeminiGoogleSearch(userText);
             var activeProvider = NormalizeAiProvider(Plugin.AiProvider.Value);
-            var systemInstruction = Plugin.PersonaPrompt.Value + "\n角色事實：" + Plugin.CharacterLore.Value
+            var koreanPersonaPrompt = UsesKoreanInterface()
+                ? "\n\n" + KoreanPatch.KoreanPersonaPrompt + "\n"
+                : string.Empty;
+            var systemInstruction = Plugin.PersonaPrompt.Value + koreanPersonaPrompt + "\n角色事實：" + Plugin.CharacterLore.Value
                 + "\n情緒表達：" + Plugin.EmotionGuidance.Value + nameContext + poseContext.Prompt + timeContext + weatherContext
                 + BuildCanonicalStyleGuide(poseContext)
                 + $"\n語言規則：目前遊戲介面語言是{interfaceLanguage.Name}。無論使用者輸入哪種語言，氣泡顯示內容都必須使用{interfaceLanguage.Name}；只有無法翻譯的專有名詞可以保留原文。若角色設定中原有的語言要求不同，以本條規則為準。每次回答必須完成最後一句，不可停在半句、連接詞或未閉合的引號。{interfaceLanguage.ExtraRule}"
